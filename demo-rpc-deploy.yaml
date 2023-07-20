@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-rpc-deploy
+  namespace: ohmyfans
+  labels:
+    app: demo-rpc-deploy
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: demo-rpc-deploy
+  template:
+    metadata:
+      labels:
+        app: demo-rpc-deploy
+    spec:
+      containers:
+      - name: demo-rpc-deploy
+        image: https://gw.ohmyfans-inc.com:8000/demo/demo-rpc:1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9091
+        readinessProbe:
+          tcpSocket:
+            port: 9091
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 9091
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+        volumeMounts:
+        - name: timezone
+          mountPath: /etc/localtime
+      volumes:
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-rpc-deploy-svc
+  namespace: ohmyfans
+spec:
+  ports:
+  - port: 9091
+    targetPort: 9091
+  selector:
+    app: demo-rpc-deploy
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-rpc-deploy-hpa-c
+  namespace: ohmyfans
+  labels:
+    app: demo-rpc-deploy-hpa-c
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: demo-rpc-deploy
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: demo-rpc-deploy-hpa-m
+  namespace: ohmyfans
+  labels:
+    app: demo-rpc-deploy-hpa-m
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: demo-rpc-deploy
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
