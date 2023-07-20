@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: demo-rpc-deploy
-        image: https://gw.ohmyfans-inc.com:8000/demo/demo-rpc:1.0
+        image: gw.ohmyfans-inc.com:8000/demo/demo-rpc:1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 9091
